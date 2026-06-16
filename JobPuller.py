@@ -5,17 +5,15 @@ import urllib.parse
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
-# 1. READ MODULE: Loads previously seen or applied job links
+# Loads previously seen or applied job links
 def load_seen_links(file_paths):
     seen_links = set() 
     
     for filepath in file_paths:
         if os.path.exists(filepath):
-            # 'utf-8-sig' prevents Excel encoding issues with special characters
             with open(filepath, mode='r', encoding='utf-8-sig') as file:
                 reader = csv.reader(file, delimiter=';')
                 for row in reader:
-                    # Ensure row has at least 3 columns (Title, Company, Link)
                     if len(row) >= 3: 
                         link = row[-1].strip()
                         # Ignore header rows
@@ -24,7 +22,7 @@ def load_seen_links(file_paths):
                         
     return seen_links
 
-# 2. SETUP MODULE: Configures and returns the headless browser
+# Configures and returns the headless browser
 def setup_webdriver():
     options = webdriver.ChromeOptions()
     options.add_argument('--headless')
@@ -34,11 +32,11 @@ def setup_webdriver():
     
     return webdriver.Chrome(options=options)
 
-# 3. EXTRACTION MODULE: Scrapes jobs and filters out seen links
+# Scrapes jobs and filters out seen links
 def extract_new_jobs(driver, seen_links, target_count=20):
     new_jobs = []
     scroll_attempts = 0
-    max_scrolls = 20 # Safety limit to prevent infinite loops
+    max_scrolls = 20
     
     while len(new_jobs) < target_count and scroll_attempts < max_scrolls:
         job_cards = driver.find_elements(By.CSS_SELECTOR, "div.base-card")
@@ -56,7 +54,6 @@ def extract_new_jobs(driver, seen_links, target_count=20):
                 if clean_link in seen_links:
                     continue
                 
-                # Filter 2: Check against jobs we just found in this run
                 current_session_links = [job[2] for job in new_jobs]
                 if clean_link in current_session_links:
                     continue
@@ -68,7 +65,7 @@ def extract_new_jobs(driver, seen_links, target_count=20):
                 seen_links.add(clean_link) # Mark as seen immediately
                 
             except:
-                continue # Skip cards with missing elements
+                continue
         
         # Scroll down if more jobs are needed
         if len(new_jobs) < target_count:
@@ -78,7 +75,7 @@ def extract_new_jobs(driver, seen_links, target_count=20):
             
     return new_jobs
 
-# 4. SAVE MODULE: Appends only new jobs to the CSV file
+# Appends only new jobs to the CSV file
 def save_new_jobs(new_jobs, filepath):
     if not new_jobs:
         print("No new jobs to save.")
@@ -95,7 +92,7 @@ def save_new_jobs(new_jobs, filepath):
             
         writer.writerows(new_jobs)
 
-# 5. MAIN EXECUTION: Orchestrates all modules
+# Orchestrates all modules
 def main(job_title, location, target_count=20):
     print(f"Checking for {target_count} completely new '{job_title}' jobs in '{location}'...")
     
@@ -124,7 +121,6 @@ def main(job_title, location, target_count=20):
         print(f"Process complete. Appended {len(new_jobs)} new jobs to '{findings_file}'.")
         
     finally:
-        # Step 5: Clean up
         driver.quit()
 
 if __name__ == "__main__":
